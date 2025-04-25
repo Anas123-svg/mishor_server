@@ -164,5 +164,19 @@ class AdminController extends Controller
     }
     
 
+    public function logout(Request $request)
+{
+    try {
+        $request->user()->currentAccessToken()->delete();
 
+        return response()->json([
+            'message' => 'Successfully logged out.'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Logout failed.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
 }
