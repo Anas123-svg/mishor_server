@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\FolderController;
 
 Route::post('/admin/register', [AdminController::class, 'signUp']);
 Route::post('/admin/login', [AdminController::class, 'login']);
@@ -35,15 +36,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
-
-
-
-
-
-
-
-
-
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('add/folder', [FolderController::class, 'createFolder']);
+    Route::post('/folders/upload', [FolderController::class, 'uploadFile']);
+    Route::get('/folders/{id}/contents', [FolderController::class, 'getFolderContents']);
+    Route::get('folders/client', [FolderController::class, 'getAllFoldersWithContents']);
+});
 
 
 
