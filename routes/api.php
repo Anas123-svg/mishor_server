@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FolderController;
-//updated code
+//updated code yat
 Route::post('/admin/register', [AdminController::class, 'signUp']);
 Route::post('/admin/login', [AdminController::class, 'login']);
 Route::get('/admin/{id}', [AdminController::class, 'show']);
