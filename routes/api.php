@@ -5,8 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FolderController;
-
-//updated code d
+//updated code
 Route::post('/admin/register', [AdminController::class, 'signUp']);
 Route::post('/admin/login', [AdminController::class, 'login']);
 Route::get('/admin/{id}', [AdminController::class, 'show']);
@@ -35,6 +34,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/client/logout', [ClientController::class, 'logout']);
 });
 
+Route::post('/admin/folder/create', [FolderController::class, 'createFolderByClientId']);
+Route::post('/admin/file/upload', [FolderController::class, 'uploadFileByClientId']);
+Route::get('/admin/folders/client/{id}', [FolderController::class, 'getAllFoldersWithContentsByClientId']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -43,22 +45,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/folders/{id}/contents', [FolderController::class, 'getFolderContents']);
     Route::get('folders/client', [FolderController::class, 'getAllFoldersWithContents']);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
