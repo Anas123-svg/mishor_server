@@ -179,4 +179,39 @@ class AdminController extends Controller
         ], 500);
     }
 }
+
+
+
+// Change password
+public function changePassword(Request $request)
+{
+    try {
+        $admin = $request->user();
+
+        $request->validate([
+            'old_password' => 'required|string',
+            'new_password' => 'required|string|min:6|confirmed',
+        ]);
+
+        if (!Hash::check($request->old_password, $admin->password)) {
+            return response()->json([
+                'message' => 'Old password does not match'
+            ], 400);
+        }
+
+        $admin->password = Hash::make($request->new_password);
+        $admin->save();
+
+        return response()->json([
+            'message' => 'Password updated successfully'
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Failed to change password',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
 }

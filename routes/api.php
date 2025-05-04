@@ -17,6 +17,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('update/by-token/admin', [AdminController::class, 'updateAuthenticated']);
     Route::delete('/admin/{id}', [AdminController::class, 'destroy']);
     Route::post('/admin/logout', [AdminController::class, 'logout']);
+    Route::post('/admin/change-password', [AdminController::class, 'changePassword']);
 });
 
 
@@ -32,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('update/by-token/client', [ClientController::class, 'updateAuthenticated']);
     Route::delete('/client/{id}', [ClientController::class, 'destroy']);
     Route::post('/client/logout', [ClientController::class, 'logout']);
+    Route::post('/client/change-password', [AdminController::class, 'changePassword']);
 });
 
 Route::post('/admin/folder/create', [FolderController::class, 'createFolderByClientId']);

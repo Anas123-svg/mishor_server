@@ -172,4 +172,37 @@ class ClientController extends Controller
     }
 }
 
+
+
+public function changePassword(Request $request)
+{
+    try {
+        $client = $request->user();
+
+        $request->validate([
+            'old_password' => 'required|string',
+            'new_password' => 'required|string|min:6|confirmed',
+        ]);
+
+        if (!Hash::check($request->old_password, $client->password)) {
+            return response()->json([
+                'message' => 'Old password does not match'
+            ], 400);
+        }
+
+        $client->password = Hash::make($request->new_password);
+        $client->save();
+
+        return response()->json([
+            'message' => 'Password updated successfully'
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Failed to change password',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
 }
