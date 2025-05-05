@@ -75,13 +75,11 @@ public function getFolderContents($folderId)
 {
     $client = Auth::guard('sanctum')->user();
 
-    $folder = Folder::where('id', $folderId)
-                    ->where('clientId', $client->id)
-                    ->first();
+    $folder = Folder::where('id', $folderId)->first();
 
     if (!$folder) {
         return response()->json([
-            'message' => 'Folder not found or you do not have permission.',
+            'message' => 'Folder not found.',
         ], 404);
     }
 
