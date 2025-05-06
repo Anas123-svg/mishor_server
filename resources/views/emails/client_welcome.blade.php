@@ -11,7 +11,7 @@
         <li><strong>Email:</strong> {{ $client->email }}</li>
         <li><strong>Password:</strong> {{ $plainPassword }}</li>
     </ul>
-    <p>You can log in at: <a href="https://yourportaldrive.com/login">Portal Drive Login</a></p>
+    <p>You can log in at: <a href="https://mishor2-client.vercel.app/">Portal Drive Login</a></p>
     <p>If you did not register, please contact us immediately.</p>
     <br>
     <p>Best regards,</p>
