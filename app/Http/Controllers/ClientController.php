@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
-
+use App\Mail\ClientWelcomeMail;
+use Illuminate\Support\Facades\Mail;
 class ClientController extends Controller
 {
     // Sign up
@@ -20,6 +21,7 @@ class ClientController extends Controller
                 'email' => 'required|email|unique:clients',
                 'password' => 'required|string|min:6|confirmed',
             ]);
+            $plainPassword = $request->password;
 
             $client = Client::create([
                 'name' => $request->name,
@@ -32,6 +34,7 @@ class ClientController extends Controller
                 'notes' => $request->notes,
                 'profileImage' => $request->profileImage,
             ]);
+            Mail::to($client->email)->send(new ClientWelcomeMail($client, $plainPassword));
 
             $token = $client->createToken('client-token')->plainTextToken;
 
