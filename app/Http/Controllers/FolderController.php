@@ -182,5 +182,42 @@ public function getAllFoldersWithContentsByClientId($id)
 
     return response()->json($data, 200);
 }
+public function deleteFile($id)
+{
+    $file = File::find($id);
+
+    if (!$file) {
+        return response()->json(['message' => 'File not found.'], 404);
+    }
+    $file->delete();
+
+    return response()->json(['message' => 'File deleted successfully.'], 200);
+}
+
+public function deleteFolder($id)
+{
+    $folder = Folder::find($id);
+
+    if (!$folder) {
+        return response()->json(['message' => 'Folder not found.'], 404);
+    }
+
+    $this->deleteFolderRecursively($folder);
+
+    return response()->json(['message' => 'Folder and all its contents deleted successfully.'], 200);
+}
+
+private function deleteFolderRecursively(Folder $folder)
+{
+    foreach ($folder->files as $file) {
+        $file->delete();
+    }
+
+    foreach ($folder->children as $childFolder) {
+        $this->deleteFolderRecursively($childFolder);
+    }
+
+    $folder->delete();
+}
 
 }

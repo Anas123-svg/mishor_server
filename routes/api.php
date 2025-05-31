@@ -39,6 +39,8 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::post('/admin/folder/create', [FolderController::class, 'createFolderByClientId']);
 Route::post('/admin/file/upload', [FolderController::class, 'uploadFileByClientId']);
 Route::get('/admin/folders/client/{id}', [FolderController::class, 'getAllFoldersWithContentsByClientId']);
+Route::delete('/file/{id}', [FolderController::class, 'deleteFile']);
+Route::delete('/folder/{id}', [FolderController::class, 'deleteFolder']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
