@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use App\Models\Client;
+use App\Mail\FileUploadMail;
+use Illuminate\Support\Facades\Mail;
+
 
 class FolderController extends Controller
 {
@@ -143,7 +147,7 @@ public function uploadFileByClientId(Request $request)
         'path' => 'required|string|max:1000',
         'clientId' => 'required|exists:clients,id',
     ]);
-
+    $client = Client::find($request->clientId);
     $folder = Folder::where('id', $request->folderId)
                     ->where('clientId', $request->clientId)
                     ->first();
@@ -158,6 +162,8 @@ public function uploadFileByClientId(Request $request)
         'folderId' => $folder->id,
         'clientId' => $request->clientId,
     ]);
+
+    Mail::to($client->email)->send(new FileUploadMail($client));
 
     return response()->json([
         'message' => 'File saved successfully using clientId.',
