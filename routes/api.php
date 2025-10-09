@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FolderController;
+use App\Http\Controllers\TemplateController;
 //updated code yat
 Route::post('/admin/register', [AdminController::class, 'signUp']);
 Route::post('/admin/login', [AdminController::class, 'login']);
@@ -51,6 +52,11 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
+Route::get('/templates', [TemplateController::class, 'index']);           // Get all
+Route::get('/templates/{id}', [TemplateController::class, 'show']);       // Get by ID
+Route::post('/templates', [TemplateController::class, 'store']);          // Create
+Route::put('/templates/{id}', [TemplateController::class, 'update']);     // Update
+Route::delete('/templates/{id}', [TemplateController::class, 'destroy']); // Delete
 
 
 
