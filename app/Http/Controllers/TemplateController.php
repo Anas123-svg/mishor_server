@@ -8,10 +8,11 @@ use Illuminate\Http\Request;
 class TemplateController extends Controller
 {
     // Get all templates
-    public function index()
-    {
-        return response()->json(Template::all(), 200);
-    }
+public function index()
+{
+    return response()->json(Template::select('id', 'name')->get(), 200);
+}
+
 
     // Get template by ID
     public function show($id)
