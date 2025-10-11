@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class File extends Model
 {
     protected $fillable = [
-        'name', 'path', 'folderId', 'clientId'
+        'name', 'path', 'folderId', 'clientId', 'status', 'built_in_portal', 'template'
+    ];
+        protected $casts = [
+        'built_in_portal' => 'boolean', 
     ];
 
     public function folder()

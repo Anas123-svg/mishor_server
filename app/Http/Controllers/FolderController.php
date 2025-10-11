@@ -97,7 +97,7 @@ private function buildFolderTree(Folder $folder)
     return [
         'id' => $folder->id,
         'name' => $folder->name,
-        'files' => $folder->files()->get(['id', 'name', 'path']),
+        'files' => $folder->files()->get(['id', 'name', 'path', 'status', 'built_in_portal', 'template']),
         'subfolders' => $folder->children()->get()->map(function ($subfolder) {
             return $this->buildFolderTree($subfolder);
         }),
