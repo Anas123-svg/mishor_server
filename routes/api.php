@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\FileController;
 //updated code yat
 Route::post('/admin/register', [AdminController::class, 'signUp']);
 Route::post('/admin/login', [AdminController::class, 'login']);
@@ -41,6 +42,7 @@ Route::post('/admin/folder/create', [FolderController::class, 'createFolderByCli
 Route::post('/admin/file/upload', [FolderController::class, 'uploadFileByClientId']);
 Route::get('/admin/folders/client/{id}', [FolderController::class, 'getAllFoldersWithContentsByClientId']);
 Route::delete('/file/{id}', [FolderController::class, 'deleteFile']);
+Route::put('/file/{id}', [FileController::class, 'update']);
 Route::delete('/folder/{id}', [FolderController::class, 'deleteFolder']);
 
 
