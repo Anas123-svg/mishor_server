@@ -7,6 +7,19 @@ use App\Models\File;
 
 class FileController extends Controller
 {
+
+    public function get($id)
+    {
+        $file = File::find($id);
+
+        if (!$file) {
+            return response()->json([
+                'message' => 'File not found.'
+            ], 404);
+        }
+
+        return response()->json($file);
+    }
     /**
      * Update a file by ID.
      */
