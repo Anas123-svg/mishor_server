@@ -146,6 +146,9 @@ public function uploadFileByClientId(Request $request)
         'name' => 'required|string|max:255',
         'path' => 'required|string|max:1000',
         'clientId' => 'required|exists:clients,id',
+        'status' => 'nullable|string|max:255',
+        'built_in_portal' => 'nullable|boolean',
+        'template' => 'nullable|string|max:255',
     ]);
     $client = Client::find($request->clientId);
     $folder = Folder::where('id', $request->folderId)
