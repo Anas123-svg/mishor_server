@@ -144,7 +144,7 @@ public function uploadFileByClientId(Request $request)
     $request->validate([
         'folderId' => 'required|exists:folders,id',
         'name' => 'required|string|max:255',
-        'path' => 'required|string|max:1000',
+        'path' => 'nullable|string|max:1000',
         'clientId' => 'required|exists:clients,id',
         'status' => 'nullable|string|max:255',
         'built_in_portal' => 'nullable|boolean',
