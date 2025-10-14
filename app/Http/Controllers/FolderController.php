@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 use App\Models\Client;
 use App\Mail\FileUploadMail;
 use Illuminate\Support\Facades\Mail;
-
+use App\Models\Template;
 
 class FolderController extends Controller
 {
@@ -148,24 +148,43 @@ public function uploadFileByClientId(Request $request)
         'clientId' => 'required|exists:clients,id',
         'status' => 'nullable|string|max:255',
         'built_in_portal' => 'nullable|boolean',
-        'template' => 'nullable|string|max:255',
+        'templateId' => 'nullable|integer|exists:templates,id',
     ]);
+
     $client = Client::find($request->clientId);
     $folder = Folder::where('id', $request->folderId)
                     ->where('clientId', $request->clientId)
                     ->first();
 
     if (!$folder) {
-        throw ValidationException::withMessages(['folderId' => 'Folder not found or not owned by this client.']);
+        throw ValidationException::withMessages([
+            'folderId' => 'Folder not found or not owned by this client.'
+        ]);
     }
 
+    // Default value for template content
+    $templateContent = null;
+
+    // If a templateId is provided, fetch its template content
+    if ($request->filled('templateId')) {
+        $template = Template::find($request->templateId);
+        if ($template) {
+            $templateContent = $template->template;
+        }
+    }
+
+    // Create file record including template content (if any)
     $file = File::create([
         'name' => $request->name,
         'path' => $request->path,
         'folderId' => $folder->id,
         'clientId' => $request->clientId,
+        'status' => $request->status,
+        'built_in_portal' => $request->built_in_portal,
+        'template' => $templateContent,
     ]);
 
+    // Send email notification
     Mail::to($client->email)->send(new FileUploadMail($client));
 
     return response()->json([
@@ -173,6 +192,7 @@ public function uploadFileByClientId(Request $request)
         'file' => $file,
     ], 201);
 }
+
 public function getAllFoldersWithContentsByClientId($id)
 {
     $clientId = $id;
