@@ -45,11 +45,11 @@ Route::delete('/file/{id}', [FolderController::class, 'deleteFile']);
 Route::put('/file/{id}', [FileController::class, 'update']);
 Route::delete('/folder/{id}', [FolderController::class, 'deleteFolder']);
 
+Route::get('/folders/{id}/contents', [FolderController::class, 'getFolderContents']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('add/folder', [FolderController::class, 'createFolder']);
     Route::post('/folders/upload', [FolderController::class, 'uploadFile']);
-    Route::get('/folders/{id}/contents', [FolderController::class, 'getFolderContents']);
     Route::get('folders/client', [FolderController::class, 'getAllFoldersWithContents']);
 });
 
