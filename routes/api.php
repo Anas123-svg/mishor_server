@@ -7,6 +7,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\ClientUserController;
 //updated code yat
 Route::post('/admin/register', [AdminController::class, 'signUp']);
 Route::post('/admin/login', [AdminController::class, 'login']);
@@ -65,4 +66,9 @@ Route::delete('/templates/{id}', [TemplateController::class, 'destroy']); // Del
 
 
 
-
+Route::get('/clients/{id}/users', [ClientUserController::class, 'usersByClient']);
+Route::get('/client-users', [ClientUserController::class, 'index']);
+Route::post('/client-users', [ClientUserController::class, 'store']);
+Route::get('/client-users/{id}', [ClientUserController::class, 'show']);
+Route::put('/client-users/{id}', [ClientUserController::class, 'update']);
+Route::delete('/client-users/{id}', [ClientUserController::class, 'destroy']);
