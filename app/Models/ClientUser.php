@@ -24,6 +24,7 @@ class ClientUser extends Model
         'city',
         'notes',
         'profileImage',
+        'role'
     ];
 
     protected $hidden = [

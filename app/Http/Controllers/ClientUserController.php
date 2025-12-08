@@ -52,6 +52,7 @@ class ClientUserController extends Controller
             'city'        => 'nullable|string|max:100',
             'notes'       => 'nullable|string',
             'profileImage'=> 'nullable|string',
+            'role'        => 'nullable|string'
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -95,6 +96,7 @@ class ClientUserController extends Controller
             'city'        => 'nullable|string|max:100',
             'notes'       => 'nullable|string',
             'profileImage'=> 'nullable|string',
+            'role'        => 'nullable|string'
         ]);
 
         if (!empty($validated['password'])) {
