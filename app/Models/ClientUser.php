@@ -35,4 +35,9 @@ class ClientUser extends Model
     {
         return $this->belongsTo(Client::class, 'client_id');
     }
+    public function assignedFolders()
+    {
+        return $this->hasMany(UserAssignedFolder::class, 'client_user_id');
+    }
+
 }

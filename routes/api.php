@@ -8,6 +8,7 @@ use App\Http\Controllers\FolderController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ClientUserController;
+use App\Http\Controllers\UserAssignedFolderController;
 //updated code yat
 Route::post('/admin/register', [AdminController::class, 'signUp']);
 Route::post('/admin/login', [AdminController::class, 'login']);
@@ -72,3 +73,9 @@ Route::post('/client-users', [ClientUserController::class, 'store']);
 Route::get('/client-users/{id}', [ClientUserController::class, 'show']);
 Route::put('/client-users/{id}', [ClientUserController::class, 'update']);
 Route::delete('/client-users/{id}', [ClientUserController::class, 'destroy']);
+
+
+Route::get('client-user/{client_user_id}/folders', [UserAssignedFolderController::class, 'getByClientUser']);
+Route::post('client-user/folders/assign', [UserAssignedFolderController::class, 'store']);
+Route::put('client-user/{client_user_id}/folders', [UserAssignedFolderController::class, 'update']);
+Route::delete('client-user/folder/{id}', [UserAssignedFolderController::class, 'destroy']);

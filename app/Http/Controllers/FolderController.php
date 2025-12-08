@@ -139,62 +139,88 @@ class FolderController extends Controller
         ], 201);
     }
 
-    public function uploadFileByClientId(Request $request)
-    {
-        $request->validate([
-            'folderId' => 'required|exists:folders,id',
-            'name' => 'required|string|max:255',
-            'path' => 'nullable|string|max:1000',
-            'clientId' => 'required|exists:clients,id',
-            'status' => 'nullable|string|max:255',
-            'built_in_portal' => 'nullable|boolean',
-            'templateId' => 'nullable|integer|exists:templates,id',
+public function uploadFileByClientId(Request $request)
+{
+    $request->validate([
+        'folderId'        => 'required|exists:folders,id',
+        'name'            => 'required|string|max:255',
+        'path'            => 'nullable|string|max:1000',
+        'clientId'        => 'required|exists:clients,id',
+        'status'          => 'nullable|string|max:255',
+        'built_in_portal' => 'nullable|boolean',
+        'templateId'      => 'nullable', // can be int or array
+    ]);
+
+    $client = Client::find($request->clientId);
+
+    $folder = Folder::where('id', $request->folderId)
+        ->where('clientId', $request->clientId)
+        ->first();
+
+    if (!$folder) {
+        throw ValidationException::withMessages([
+            'folderId' => 'Folder not found or not owned by this client.'
         ]);
+    }
 
-        $client = Client::find($request->clientId);
-        $folder = Folder::where('id', $request->folderId)
-            ->where('clientId', $request->clientId)
-            ->first();
+    // Normalize templateId into an array
+    $templateIds = [];
 
-        if (!$folder) {
-            throw ValidationException::withMessages([
-                'folderId' => 'Folder not found or not owned by this client.'
+    if ($request->has('templateId')) {
+        if (is_array($request->templateId)) {
+            $templateIds = $request->templateId;
+        } else {
+            $templateIds = [$request->templateId];
+        }
+    }
+
+    $createdFiles = [];
+
+    // If templateIds exist → create files for each template
+    if (!empty($templateIds)) {
+
+        foreach ($templateIds as $templateId) {
+            $template = Template::find($templateId);
+            $templateContent = $template?->template;
+
+            $builtInPortal = $request->boolean('built_in_portal', true);
+
+            $createdFiles[] = File::create([
+                'name'             => $request->name,
+                'path'             => $request->path,
+                'folderId'         => $folder->id,
+                'clientId'         => $request->clientId,
+                'status'           => $request->status,
+                'built_in_portal'  => $builtInPortal,
+                'template'         => $templateContent,
+                'templateId'       => $templateId,
             ]);
         }
 
-        // Default value for template content
-        $templateContent = null;
+    } else {
+        // No template → single file creation
+        $builtInPortal = false;
 
-        // If a templateId is provided, fetch its template content
-        if ($request->filled('templateId')) {
-            $template = Template::find($request->templateId);
-            if ($template) {
-                $templateContent = $template->template;
-            }
-        }
-        $builtInPortal = $request->filled('templateId')
-            ? ($request->boolean('built_in_portal', true))
-            : false;
-
-        // Create file record including template content (if any)
-        $file = File::create([
-            'name' => $request->name,
-            'path' => $request->path,
-            'folderId' => $folder->id,
-            'clientId' => $request->clientId,
-            'status' => $request->status,
-            'built_in_portal' => $builtInPortal,
-            'template' => $templateContent,
+        $createdFiles[] = File::create([
+            'name'             => $request->name,
+            'path'             => $request->path,
+            'folderId'         => $folder->id,
+            'clientId'         => $request->clientId,
+            'status'           => $request->status,
+            'built_in_portal'  => $builtInPortal,
+            'template'         => null,
         ]);
-
-        // Send email notification
-        Mail::to($client->email)->send(new FileUploadMail($client));
-
-        return response()->json([
-            'message' => 'File saved successfully using clientId.',
-            'file' => $file,
-        ], 201);
     }
+
+    // Send email notification
+    Mail::to($client->email)->send(new FileUploadMail($client));
+
+    return response()->json([
+        'message' => 'File(s) saved successfully using clientId.',
+        'files'   => $createdFiles,
+    ], 201);
+}
+
 
     public function getAllFoldersWithContentsByClientId($id)
     {
