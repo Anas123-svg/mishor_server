@@ -69,6 +69,18 @@ Route::delete('/templates/{id}', [TemplateController::class, 'destroy']); // Del
 
 Route::get('/clients/{id}/users', [ClientUserController::class, 'usersByClient']);
 Route::get('/client-users', [ClientUserController::class, 'index']);
+Route::post('/client-user/login', [ClientUserController::class, 'login']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/client-user/logout', [ClientUserController::class, 'logout']);
+    Route::get('by-token/client-user', [ClientUserController::class, 'getAuthenticatedClient']);
+    Route::put('by-token/client-user/update', [ClientUserController::class, 'updateAuthenticated']);
+    Route::post('client-user/change-password', [ClientUserController::class, 'changePassword']);
+
+    
+    Route::get('/client-user/folders', [ClientUserController::class, 'getAllClientUserFoldersWithContents']);
+
+});
+
 Route::post('/client-users', [ClientUserController::class, 'store']);
 Route::get('/client-users/{id}', [ClientUserController::class, 'show']);
 Route::put('/client-users/{id}', [ClientUserController::class, 'update']);
