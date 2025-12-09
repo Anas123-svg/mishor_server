@@ -54,6 +54,26 @@ class ClientUserController extends Controller
 }
 
 
+
+    public function usersByClientAuthenticated()
+{
+    $clientUser = Auth::guard('sanctum')->user();
+    $clientId = $clientUser->client_id;
+
+    $client = Client::findOrFail($clientId);
+
+    $users = ClientUser::where('client_id', $clientId)->get();
+
+    return response()->json([
+        'message' => 'Users fetched successfully',
+        'client' => [
+            'name' => $client->name,
+            'surname' => $client->surname,
+            'email' => $client->email,
+        ],
+        'data' => $users
+    ]);
+}
     public function index()
     {
         $users = ClientUser::with('client')->latest()->get();
