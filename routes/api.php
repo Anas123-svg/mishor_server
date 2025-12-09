@@ -30,6 +30,7 @@ Route::post('/client/register', [ClientController::class, 'signUp']);
 Route::post('/client/login', [ClientController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::get('/client', [ClientController::class, 'index']);
     Route::get('by-token/client', [ClientController::class, 'getAuthenticatedClient']);
     Route::get('/client/{id}', [ClientController::class, 'show']);
@@ -75,8 +76,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('by-token/client-user', [ClientUserController::class, 'getAuthenticatedClient']);
     Route::put('by-token/client-user/update', [ClientUserController::class, 'updateAuthenticated']);
     Route::post('client-user/change-password', [ClientUserController::class, 'changePassword']);
+    Route::get('get/client/users', [ClientUserController::class, 'usersByClientAuthenticated']);
 
-    Route::post('client/users', [ClientUserController::class, 'usersByClientAuthenticated']);
 
     Route::get('/client-user/folders', [ClientUserController::class, 'getAllClientUserFoldersWithContents']);
 

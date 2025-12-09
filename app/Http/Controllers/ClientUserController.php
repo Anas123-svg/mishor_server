@@ -55,25 +55,65 @@ class ClientUserController extends Controller
 
 
 
-    public function usersByClientAuthenticated()
+public function usersByClientAuthenticated()
 {
-    $clientUser = Auth::guard('sanctum')->user();
-    $clientId = $clientUser->client_id;
+    try {
+        $authUser = Auth::guard('sanctum')->user();
 
-    $client = Client::findOrFail($clientId);
+        if (!$authUser) {
+            return response()->json([
+                'message' => 'Unauthenticated user - token missing or invalid'
+            ], 401);
+        }
 
-    $users = ClientUser::where('client_id', $clientId)->get();
+        // Detect client_id safely
+        $clientId = $authUser->client_id ?? $authUser->id ?? null;
 
-    return response()->json([
-        'message' => 'Users fetched successfully',
-        'client' => [
-            'name' => $client->name,
-            'surname' => $client->surname,
-            'email' => $client->email,
-        ],
-        'data' => $users
-    ]);
+        if (!$clientId) {
+            return response()->json([
+                'message' => 'client_id not found in token user'
+            ], 400);
+        }
+
+        // Get client info
+        $client = Client::findOrFail($clientId);
+
+        // Get client users
+        $users = ClientUser::where('client_id', $clientId)->get([
+            'id',
+            'client_id',
+            'name',
+            'surname',
+            'email',
+            'role',
+            'phone',
+            'country',
+            'city',
+            'notes',
+            'profileImage',
+            'created_at',
+            'updated_at'
+        ]);
+
+        // ✅ Exact response structure you asked for
+        return response()->json([
+            'message' => 'Users fetched successfully',
+            'client' => [
+                'name'    => $client->name,
+                'surname' => $client->surname,
+                'email'   => $client->email,
+            ],
+            'data' => $users
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Server error',
+            'error' => $e->getMessage()
+        ], 500);
+    }
 }
+
     public function index()
     {
         $users = ClientUser::with('client')->latest()->get();
