@@ -76,7 +76,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('by-token/client-user/update', [ClientUserController::class, 'updateAuthenticated']);
     Route::post('client-user/change-password', [ClientUserController::class, 'changePassword']);
 
-    
+    Route::post('client/users/', [ClientUserController::class, 'usersByClientAuthenticated']);
+
     Route::get('/client-user/folders', [ClientUserController::class, 'getAllClientUserFoldersWithContents']);
 
 });
