@@ -10,6 +10,8 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use App\Mail\ClientWelcomeMail;
 use Illuminate\Support\Facades\Mail;
+use App\Models\LoginLog;
+use App\Models\ClientUser;
 class ClientController extends Controller
 {
     // Sign up
@@ -72,7 +74,12 @@ class ClientController extends Controller
         }
 
         $token = $client->createToken('client-token')->plainTextToken;
-
+        LoginLog::create([
+            'client_id' => $client->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'logged_in_at' => now(),
+        ]);
         return response()->json([
             'client' => $client,
             'token' => $token,
@@ -80,10 +87,47 @@ class ClientController extends Controller
     }
 
     // Get all clients
-    public function index()
-    {
-        return Client::all();
-    }
+public function index()
+{
+    $clients = Client::all();
+
+    $data = $clients->map(function ($client) {
+
+        // Count users for this client
+        $usersCount = ClientUser::where('client_id', $client->id)->count();
+
+        // Get last login for this client
+        $lastLogin = LoginLog::where('client_id', $client->id)
+            ->orderBy('logged_in_at', 'desc')
+            ->first();
+
+        return [
+            'id' => $client->id,
+            'name' => $client->name,
+            'surname' => $client->surname,
+            'email' => $client->email,
+            'phone' => $client->phone,
+            'country' => $client->country,
+            'city' => $client->city,
+            'notes' => $client->notes,
+            'profileImage' => $client->profileImage,
+            'created_at' => $client->created_at,
+            'updated_at' => $client->updated_at,
+
+            'users_count' => $usersCount,
+            'last_login' => $lastLogin ? [
+                'id' => $lastLogin->id,
+                'ip_address' => $lastLogin->ip_address,
+                'user_agent' => $lastLogin->user_agent,
+                'logged_in_at' => $lastLogin->logged_in_at,
+            ] : null,
+        ];
+    });
+
+    return response()->json($data, 200);
+}
+
+
 
     // Get client by ID
     public function show($id)
@@ -109,7 +153,14 @@ class ClientController extends Controller
         ]);
 
         $data = $request->only([
-            'name', 'surname', 'email', 'phone', 'country', 'city', 'notes', 'profileImage'
+            'name',
+            'surname',
+            'email',
+            'phone',
+            'country',
+            'city',
+            'notes',
+            'profileImage'
         ]);
 
         if ($request->filled('password')) {
@@ -135,7 +186,14 @@ class ClientController extends Controller
         ]);
 
         $data = $request->only([
-            'name', 'surname', 'email', 'phone', 'country', 'city', 'notes', 'profileImage'
+            'name',
+            'surname',
+            'email',
+            'phone',
+            'country',
+            'city',
+            'notes',
+            'profileImage'
         ]);
 
         if ($request->filled('password')) {
@@ -160,52 +218,72 @@ class ClientController extends Controller
     }
 
     public function logout(Request $request)
-{
-    try {
-        $request->user()->currentAccessToken()->delete();
+    {
+        try {
+            $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Successfully logged out.'
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Logout failed.',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
-
-
-
-public function changePassword(Request $request)
-{
-    try {
-        $client = $request->user();
-
-        $request->validate([
-            'old_password' => 'required|string',
-            'new_password' => 'required|string|min:6|confirmed',
-        ]);
-
-        if (!Hash::check($request->old_password, $client->password)) {
             return response()->json([
-                'message' => 'Old password does not match'
-            ], 400);
+                'message' => 'Successfully logged out.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Logout failed.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
+    public function changePassword(Request $request)
+    {
+        try {
+            $client = $request->user();
+
+            $request->validate([
+                'old_password' => 'required|string',
+                'new_password' => 'required|string|min:6|confirmed',
+            ]);
+
+            if (!Hash::check($request->old_password, $client->password)) {
+                return response()->json([
+                    'message' => 'Old password does not match'
+                ], 400);
+            }
+
+            $client->password = Hash::make($request->new_password);
+            $client->save();
+
+            return response()->json([
+                'message' => 'Password updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to change password',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+        public function getLoginsByClientId(Request $request, $clientId)
+    {
+        $logins = LoginLog::where('client_id', $clientId)
+            ->orderBy('logged_in_at', 'desc')
+            ->get();
+
+        if ($logins->isEmpty()) {
+            return response()->json([
+                'message' => 'No login records found',
+                'data' => []
+            ], 200);
         }
 
-        $client->password = Hash::make($request->new_password);
-        $client->save();
-
         return response()->json([
-            'message' => 'Password updated successfully'
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Failed to change password',
-            'error' => $e->getMessage()
-        ], 500);
+            'message' => 'Login records fetched successfully',
+            'data' => $logins
+        ], 200);
     }
-}
+
 
 }

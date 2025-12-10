@@ -9,10 +9,11 @@ use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ClientUserController;
 use App\Http\Controllers\UserAssignedFolderController;
-//updated code yat
+//updated code yat 
 Route::post('/admin/register', [AdminController::class, 'signUp']);
 Route::post('/admin/login', [AdminController::class, 'login']);
 Route::get('/admin/{id}', [AdminController::class, 'show']);
+Route::get('/stat/admin', [AdminController::class, 'getAdminDashboardStats']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin', [AdminController::class, 'index']);
@@ -28,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::post('/client/register', [ClientController::class, 'signUp']);
 Route::post('/client/login', [ClientController::class, 'login']);
+Route::get('logs/client/{id}', [ClientController::class, 'getLoginsByClientId']);
 
 Route::middleware('auth:sanctum')->group(function () {
 

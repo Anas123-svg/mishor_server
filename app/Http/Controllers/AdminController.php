@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Log;
 
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\QueryException;
+use App\Models\Folder;
+use App\Models\Client;
+use App\Models\ClientUser;
+use App\Models\LoginLog;
 use Exception;
 
 class AdminController extends Controller
@@ -23,7 +27,7 @@ class AdminController extends Controller
                 'email' => 'required|email|unique:admins',
                 'password' => 'required|string|min:6',
             ]);
-    
+
             $admin = Admin::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -31,26 +35,26 @@ class AdminController extends Controller
                 'phone' => $request->phone,
                 'profileImage' => $request->profileImage,
             ]);
-    
+
             $token = $admin->createToken('admin-token')->plainTextToken;
-    
+
             return response()->json([
                 'token' => $token,
                 'admin' => $admin
             ], 201);
-    
+
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
-    
+
         } catch (QueryException $e) {
             Log::error('Database error during admin signup', ['error' => $e->getMessage()]);
             return response()->json([
                 'message' => 'Database error. Please try again later.'
             ], 500);
-    
+
         } catch (Exception $e) {
             Log::error('Unexpected error during admin signup', ['error' => $e->getMessage()]);
             return response()->json([
@@ -58,7 +62,7 @@ class AdminController extends Controller
             ], 500);
         }
     }
-    
+
 
     // Login
     public function login(Request $request)
@@ -107,7 +111,10 @@ class AdminController extends Controller
         $admin = Admin::findOrFail($id);
 
         $admin->update($request->only([
-            'name', 'email', 'phone', 'profileImage'
+            'name',
+            'email',
+            'phone',
+            'profileImage'
         ]));
 
         return response()->json($admin);
@@ -127,34 +134,34 @@ class AdminController extends Controller
     public function updateAuthenticated(Request $request)
     {
         try {
-            $admin = $request->user(); 
-    
+            $admin = $request->user();
+
             $request->validate([
                 'name' => 'sometimes|string',
                 'email' => 'sometimes|email|unique:admins,email,' . $admin->id,
                 'phone' => 'nullable|string',
                 'profileImage' => 'nullable|string',
-                'password' => 'nullable|string|min:6|confirmed' 
+                'password' => 'nullable|string|min:6|confirmed'
             ]);
-    
+
             $data = $request->only([
                 'name',
                 'email',
                 'phone',
                 'profileImage'
             ]);
-    
+
             if ($request->filled('password')) {
                 $data['password'] = Hash::make($request->password);
             }
-    
+
             $admin->update($data);
-    
+
             return response()->json([
                 'message' => 'Admin updated successfully',
                 'admin' => $admin
             ]);
-    
+
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to update admin',
@@ -162,56 +169,108 @@ class AdminController extends Controller
             ], 500);
         }
     }
-    
+
 
     public function logout(Request $request)
-{
-    try {
-        $request->user()->currentAccessToken()->delete();
+    {
+        try {
+            $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Successfully logged out.'
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Logout failed.',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
-
-
-
-// Change password
-public function changePassword(Request $request)
-{
-    try {
-        $admin = $request->user();
-
-        $request->validate([
-            'old_password' => 'required|string',
-            'new_password' => 'required|string|min:6|confirmed',
-        ]);
-
-        if (!Hash::check($request->old_password, $admin->password)) {
             return response()->json([
-                'message' => 'Old password does not match'
-            ], 400);
+                'message' => 'Successfully logged out.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Logout failed.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $admin->password = Hash::make($request->new_password);
-        $admin->save();
-
-        return response()->json([
-            'message' => 'Password updated successfully'
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Failed to change password',
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
+
+
+
+    // Change password
+    public function changePassword(Request $request)
+    {
+        try {
+            $admin = $request->user();
+
+            $request->validate([
+                'old_password' => 'required|string',
+                'new_password' => 'required|string|min:6|confirmed',
+            ]);
+
+            if (!Hash::check($request->old_password, $admin->password)) {
+                return response()->json([
+                    'message' => 'Old password does not match'
+                ], 400);
+            }
+
+            $admin->password = Hash::make($request->new_password);
+            $admin->save();
+
+            return response()->json([
+                'message' => 'Password updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to change password',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function getAdminDashboardStats()
+    {
+        $totalClients = Client::count();
+        $totalClientUsers = ClientUser::count();
+        $totalFolders = Folder::count();
+
+        $clients = Client::withCount([
+            'folders',
+        ])
+            ->withCount([
+                'files'
+            ])
+            ->withCount([
+                'folders as site_folders_count'
+            ])
+            ->withCount([
+                'folders as assigned_folders_count'
+            ])
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function ($client) {
+                $usersCount = ClientUser::where('client_id', $client->id)->count();
+                $lastLogin = LoginLog::where('client_id', $client->id)
+                    ->latest('logged_in_at')
+                    ->first();
+
+                return [
+                    'id' => $client->id,
+                    'name' => $client->name,
+                    'surname' => $client->surname,
+                    'email' => $client->email,
+                    'phone' => $client->phone,
+                    'country' => $client->country,
+                    'city' => $client->city,
+                    'notes' => $client->notes,
+                    'profileImage' => $client->profileImage,
+                    'users_count' => $usersCount,
+                    'last_login' => $lastLogin,
+                ];
+            });
+
+        return response()->json([
+            'message' => 'Admin dashboard stats fetched successfully',
+            'data' => [
+                'total_clients' => $totalClients,
+                'total_client_users' => $totalClientUsers,
+                'total_site_folders' => $totalFolders,
+                'clients' => $clients
+            ]
+        ], 200);
+    }
 
 }
