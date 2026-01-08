@@ -5,44 +5,47 @@ namespace App\Http\Controllers;
 use App\Models\UserAssignedFolder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\ClientUser;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\FolderAssignedMail;
 
 class UserAssignedFolderController extends Controller
 {
     /**
      * Get all folders by client_user_id
      */
-public function getByClientUser($client_user_id)
-{
-    $folders = UserAssignedFolder::with('folder')
-        ->where('client_user_id', $client_user_id)
-        ->get();
+    public function getByClientUser($client_user_id)
+    {
+        $folders = UserAssignedFolder::with('folder')
+            ->where('client_user_id', $client_user_id)
+            ->get();
 
-    if ($folders->isEmpty()) {
+        if ($folders->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No folders found for this user',
+                'data' => []
+            ]);
+        }
+
+        // Add folder_name field
+        $folders = $folders->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'client_user_id' => $item->client_user_id,
+                'folder_id' => $item->folder_id,
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at,
+                'folder_name' => $item->folder?->name,
+                // 'folder'         => $item->folder           
+            ];
+        });
+
         return response()->json([
-            'status' => false,
-            'message' => 'No folders found for this user',
-            'data' => []
+            'status' => true,
+            'data' => $folders
         ]);
     }
-
-    // Add folder_name field
-    $folders = $folders->map(function ($item) {
-        return [
-            'id'             => $item->id,
-            'client_user_id' => $item->client_user_id,
-            'folder_id'      => $item->folder_id,
-            'created_at'     => $item->created_at,
-            'updated_at'     => $item->updated_at,
-            'folder_name'    => $item->folder?->name,   
-           // 'folder'         => $item->folder           
-        ];
-    });
-
-    return response()->json([
-        'status' => true,
-        'data'   => $folders
-    ]);
-}
 
 
     /**
@@ -55,14 +58,14 @@ public function getByClientUser($client_user_id)
     {
         $validator = Validator::make($request->all(), [
             'client_user_id' => 'required|exists:client_users,id',
-            'folders'        => 'required|array',
-            'folders.*'      => 'exists:folders,id',
+            'folders' => 'required|array',
+            'folders.*' => 'exists:folders,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'status'  => false,
-                'errors'  => $validator->errors()
+                'status' => false,
+                'errors' => $validator->errors()
             ], 422);
         }
 
@@ -81,15 +84,26 @@ public function getByClientUser($client_user_id)
             if (!$exists) {
                 $created[] = UserAssignedFolder::create([
                     'client_user_id' => $clientUserId,
-                    'folder_id'      => $folderId,
+                    'folder_id' => $folderId,
                 ]);
             }
         }
 
+
+        if (!empty($created)) {
+            $clientUser = ClientUser::find($clientUserId);
+
+            if ($clientUser && $clientUser->email) {
+                Mail::to($clientUser->email)
+                    ->send(new FolderAssignedMail($clientUser));
+            }
+        }
+
+
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'Folders assigned successfully',
-            'data'    => $created
+            'data' => $created
         ]);
     }
 
@@ -99,7 +113,7 @@ public function getByClientUser($client_user_id)
     public function update(Request $request, $client_user_id)
     {
         $validator = Validator::make($request->all(), [
-            'folders'   => 'required|array',
+            'folders' => 'required|array',
             'folders.*' => 'exists:folders,id',
         ]);
 
@@ -117,12 +131,12 @@ public function getByClientUser($client_user_id)
         foreach ($request->folders as $folderId) {
             UserAssignedFolder::create([
                 'client_user_id' => $client_user_id,
-                'folder_id'      => $folderId,
+                'folder_id' => $folderId,
             ]);
         }
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'Folders updated successfully'
         ]);
     }
@@ -136,7 +150,7 @@ public function getByClientUser($client_user_id)
 
         if (!$record) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'Record not found'
             ], 404);
         }
@@ -144,7 +158,7 @@ public function getByClientUser($client_user_id)
         $record->delete();
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'Folder assignment deleted'
         ]);
     }
