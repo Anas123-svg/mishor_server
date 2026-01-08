@@ -20,7 +20,7 @@ class FolderAssignedMail extends Mailable
 
     public function build()
     {
-        return $this->subject('File Upload Notification')
+        return $this->subject('New Folder Assigned Access Available')
                     ->view('emails.folder_assigned')
                     ->with([
                         'clientName' => $this->clientUser->name,
