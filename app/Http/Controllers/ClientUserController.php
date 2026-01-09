@@ -11,6 +11,9 @@ use App\Models\UserAssignedFolder;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Folder;
 use App\Models\LoginLog;
+use App\Mail\ClientUserWelcomeMail;
+use Illuminate\Support\Facades\Mail;
+
 class ClientUserController extends Controller
 {
 
@@ -145,13 +148,15 @@ class ClientUserController extends Controller
             'role' => 'nullable|string'
         ]);
 
+        $plainPassword = $validated['password'];
         $validated['password'] = Hash::make($validated['password']);
 
-        $user = ClientUser::create($validated);
+        $clientUser = ClientUser::create($validated);
+        Mail::to($clientUser->email)->send(new ClientUserWelcomeMail($clientUser, $plainPassword));
 
         return response()->json([
             'message' => 'Client user created successfully',
-            'data' => $user
+            'data' => $clientUser
         ], 201);
     }
 
