@@ -25,6 +25,6 @@ class ClientUserWelcomeMail extends Mailable
     public function build()
     {
         return $this->subject('Welcome to Portal Drive')
-                    ->view('emails.client_user_welcome.blade');
+                    ->view('emails.client_user_welcome');
     }
 }
