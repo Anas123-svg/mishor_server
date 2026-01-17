@@ -23,78 +23,107 @@ class AppJobController extends Controller
      */
 public function updateTest(Request $request)
 {
-    // Log the incoming payload
-    Log::info(
-        'Job update request received',
-        [
-            'payload' => json_decode(
-                json_encode($request->all(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-                true
-            )
-        ]
-    );
-
-    // Step 1: Find the job on server by server_id
-    $job = AppJob::where('id', $request->server_id)->first(); // server_id from request maps to id on server
-
-    if (!$job) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Job not found on server'
-        ], 404);
-    }
-
-    // Step 2: Update job fields
-    $job->update([
-        'client_name' => $request->client_name ?? null,
-        'job_title'   => $request->event_title ?? null,
-        'notes'       => $request->notes ?? null,
-        'on_site_date'=> $request->on_site_date ?? null,
-        'on_site_time'=> $request->on_site_time ?? null,
-        'due_on'      => $request->due_on ?? null,
-        'status'      => $request->status ?? null,
-        // add clientId if provided
-        'clientId'    => $request->clientId ?? $job->clientId ?? null,
+    Log::info('Job sync request received', [
+        'payload' => $request->all(),
     ]);
 
-    // Step 3: Loop through reports
-    if ($request->has('reports')) {
+    /**
+     * STEP 1:
+     * Decide create vs update
+     */
+    if (empty($request->server_id)) {
+        /**
+         * CREATE NEW JOB (server_id is NULL)
+         */
+        $job = AppJob::create([
+            'client_name'   => $request->client_name ?? null,
+            'job_title'     => $request->event_title ?? null,
+            'notes'         => $request->notes ?? null,
+            'on_site_date'  => $request->on_site_date ?? null,
+            'on_site_time'  => $request->on_site_time ?? null,
+            'due_on'        => $request->due_on ?? null,
+            'status'        => $request->status ?? 'pending',
+            'clientId'      => $request->clientId ?? null,
+        ]);
+    } else {
+        /**
+         * UPDATE EXISTING JOB
+         */
+        $job = AppJob::where('id', $request->server_id)->first();
+
+        if (!$job) {
+            /**
+             * Edge case:
+             * server_id sent but job not found → create it
+             */
+            $job = AppJob::create([
+                'client_name'   => $request->client_name ?? null,
+                'job_title'     => $request->event_title ?? null,
+                'notes'         => $request->notes ?? null,
+                'on_site_date'  => $request->on_site_date ?? null,
+                'on_site_time'  => $request->on_site_time ?? null,
+                'due_on'        => $request->due_on ?? null,
+                'status'        => $request->status ?? 'pending',
+                'clientId'      => $request->clientId ?? null,
+            ]);
+        } else {
+            $job->update([
+                'client_name'   => $request->client_name ?? $job->client_name,
+                'job_title'     => $request->event_title ?? $job->job_title,
+                'notes'         => $request->notes ?? $job->notes,
+                'on_site_date'  => $request->on_site_date ?? $job->on_site_date,
+                'on_site_time'  => $request->on_site_time ?? $job->on_site_time,
+                'due_on'        => $request->due_on ?? $job->due_on,
+                'status'        => $request->status ?? $job->status,
+                'clientId'      => $request->clientId ?? $job->clientId,
+            ]);
+        }
+    }
+
+    /**
+     * STEP 2:
+     * Sync reports (safe even if empty)
+     */
+    if ($request->has('reports') && is_array($request->reports)) {
         foreach ($request->reports as $reportData) {
-            if (isset($reportData['server_id']) && $reportData['server_id']) {
+
+            if (!empty($reportData['server_id'])) {
                 $report = JobReport::find($reportData['server_id']);
+
                 if ($report) {
                     $report->update([
-                        'report_name' => $reportData['report_name'],
-                        'layout'      => $reportData['layout'],
-                        'form_data'   => $reportData['form_data'] ?? [],
+                        'report_name' => $reportData['report_name'] ?? $report->report_name,
+                        'layout'      => $reportData['layout'] ?? $report->layout,
+                        'form_data'   => $reportData['form_data'] ?? $report->form_data,
                         'job_id'      => $job->id,
                     ]);
                 }
             } else {
-                // Create a new report for this job
                 JobReport::create([
-                    'report_name' => $reportData['report_name'],
-                    'layout'      => $reportData['layout'],
-                    'form_data'   => $reportData['form_data'] ?? [],
                     'job_id'      => $job->id,
+                    'report_name' => $reportData['report_name'] ?? null,
+                    'layout'      => $reportData['layout'] ?? null,
+                    'form_data'   => $reportData['form_data'] ?? [],
                 ]);
             }
         }
     }
-    $reportsArray = $job->reports->map(function ($report) use ($job) {
-        return [
-            'server_id'     => $report->id,      // server report id
-            'server_job_id' => $job->id,         // server job id
-            'report_name'   => $report->report_name,
-            'layout'        => $report->layout,
-            'form_data'     => $report->form_data,
-        ];
-    });
 
+    /**
+     * STEP 3:
+     * Return mapping back to client
+     */
     return response()->json([
-        'status'  => 'ok',
-        'message' => 'Job and reports have been updated',
-        'reports' => $reportsArray
+        'status'        => 'ok',
+        'message'       => 'Job synced successfully',
+        'server_id'     => $job->id,   
+        'reports'       => $job->reports->map(fn ($r) => [
+            'server_id'     => $r->id,
+            'server_job_id' => $job->id,
+            'report_name'   => $r->report_name,
+            'layout'        => $r->layout,
+            'form_data'     => $r->form_data,
+        ]),
     ], 200);
 }
 
