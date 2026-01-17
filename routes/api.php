@@ -99,21 +99,38 @@ Route::put('client-user/{client_user_id}/folders', [UserAssignedFolderController
 Route::delete('client-user/folder/{id}', [UserAssignedFolderController::class, 'destroy']);
 
 
-Route::prefix('jobs')->group(function () {
-    Route::get('/', [AppJobController::class, 'index']);            // List all jobs
-    Route::get('/app-sync', [AppJobController::class, 'appSync']);          // List all job reports
-    Route::post('/test-update', [AppJobController::class, 'updateTest']);          // List all job reports
+Route::prefix('jobs')
+    ->as('jobs.')
+    ->group(function () {
 
-    Route::get('/{id}', [AppJobController::class, 'show']);        // Get job by ID
-    Route::get('/client/{clientId}', [AppJobController::class, 'getByClient']); // Get jobs by client ID
-    Route::post('/', [AppJobController::class, 'store']);          // Create job
-    Route::put('/{id}', [AppJobController::class, 'update']);      // Update job
-    Route::delete('/{id}', [AppJobController::class, 'destroy']);  
-});
+        Route::get('/', [AppJobController::class, 'index'])
+            ->name('index');                 
+
+        Route::get('/app-sync', [AppJobController::class, 'appSync'])
+            ->name('appSync');               
+
+        Route::post('/test-update', [AppJobController::class, 'updateTest'])
+            ->name('testUpdate');            // jobs.testUpdate
+
+        Route::get('/client/{clientId}', [AppJobController::class, 'getByClient'])
+            ->name('byClient');              // jobs.byClient
+
+        Route::get('/{id}', [AppJobController::class, 'show'])
+            ->name('show');                  // jobs.show
+
+        Route::post('/', [AppJobController::class, 'store'])
+            ->name('store');                 // jobs.store
+
+        Route::put('/{id}', [AppJobController::class, 'update'])
+            ->name('update');                // jobs.update
+
+        Route::delete('/{id}', [AppJobController::class, 'destroy'])
+            ->name('destroy');               // jobs.destroy
+    });
 
 
 Route::prefix('job-reports')->group(function () {
-    Route::get('/', [JobReportController::class, 'index']);          // List all job reports
+    Route::get('/', [JobReportController::class, 'index']);          
     Route::post('/', [JobReportController::class, 'store']);              // Create
     Route::get('/{id}', [JobReportController::class, 'show']);            // Get by report ID
     Route::get('/job/{jobId}', [JobReportController::class, 'getByJob']); // Get by job ID
