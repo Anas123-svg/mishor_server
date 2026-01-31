@@ -18,26 +18,34 @@ class FolderController extends Controller
     /**
      * Create a new folder.
      */
-    public function createFolder(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'parentId' => 'nullable|exists:folders,id',
-        ]);
+public function createFolder(Request $request) 
+{
+    $isClientUser = $request->boolean('client_user'); // defaults to false if not present
 
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'parentId' => 'nullable|exists:folders,id',
+        'client_user' => 'nullable|boolean',
+    ]);
+
+    $folderData = [
+        'name' => $validated['name'],
+        'parentId' => $validated['parentId'] ?? null,
+    ];
+
+    if (!$isClientUser) {
         $client = $request->user();
-
-        $folder = Folder::create([
-            'name' => $request->name,
-            'parentId' => $request->parentId,
-            'clientId' => $client->id,
-        ]);
-
-        return response()->json([
-            'message' => 'Folder created successfully.',
-            'folder' => $folder,
-        ], 201);
+        $folderData['clientId'] = $client->id;
     }
+
+    $folder = Folder::create($folderData);
+
+    return response()->json([
+        'message' => 'Folder created successfully.',
+        'folder' => $folder,
+    ], 201);
+}
+
 
     /**
      * Upload a file inside a folder.
