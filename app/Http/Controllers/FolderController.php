@@ -50,37 +50,58 @@ public function createFolder(Request $request)
     /**
      * Upload a file inside a folder.
      */
-    public function uploadFile(Request $request)
-    {
-        $request->validate([
-            'folderId' => 'required|exists:folders,id',
-            'name' => 'required|string|max:255',
-            'path' => 'required|string|max:1000',
-        ]);
+public function uploadFile(Request $request)
+{
+    $isClientUser = $request->boolean('client_user'); // defaults false if missing
 
-        $client = Auth::guard('sanctum')->user();
+    $validated = $request->validate([
+        'folderId' => 'required|exists:folders,id',
+        'name' => 'required|string|max:255',
+        'path' => 'required|string|max:1000',
+        'client_user' => 'nullable|boolean',
+    ]);
 
-        $folder = Folder::where('id', $request->folderId)
+    // If NOT client_user, enforce token client ownership
+    if (!$isClientUser) {
+        $client = $request->user(); // sanctum token user
+
+        $folder = Folder::where('id', $validated['folderId'])
             ->where('clientId', $client->id)
             ->first();
 
         if (!$folder) {
-            throw ValidationException::withMessages(['folderId' => 'Folder not found or you do not have permission.']);
+            throw ValidationException::withMessages([
+                'folderId' => 'Folder not found or you do not have permission.'
+            ]);
         }
+    } else {
+        $folder = Folder::find($validated['folderId']);
 
-        $file = File::create([
-            'name' => $request->name,
-            'path' => $request->path,
-            'folderId' => $folder->id,
-            'clientId' => $client->id,
-        ]);
-
-        return response()->json([
-            'message' => 'File saved successfully.',
-            'file' => $file,
-        ], 201);
+        if (!$folder) {
+            throw ValidationException::withMessages([
+                'folderId' => 'Folder not found.'
+            ]);
+        }
     }
-    /**
+
+    $fileData = [
+        'name' => $validated['name'],
+        'path' => $validated['path'],
+        'folderId' => $folder->id,
+    ];
+
+    // Attach clientId only when NOT client_user
+    if (!$isClientUser) {
+        $fileData['clientId'] = $request->user()->id;
+    }
+
+    $file = File::create($fileData);
+
+    return response()->json([
+        'message' => 'File saved successfully.',
+        'file' => $file,
+    ], 201);
+}    /**
      * Get a folder with all its nested folders and files recursively.
      */
     public function getFolderContents($folderId)
