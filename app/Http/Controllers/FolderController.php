@@ -217,7 +217,7 @@ public function uploadFileByClientId(Request $request)
             $builtInPortal = $request->boolean('built_in_portal', true);
 
             $createdFiles[] = File::create([
-                'name'             => $request->name,
+                'name'             => $template->name,
                 'path'             => $request->path,
                 'folderId'         => $folder->id,
                 'clientId'         => $request->clientId,
