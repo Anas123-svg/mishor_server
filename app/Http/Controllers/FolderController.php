@@ -180,6 +180,7 @@ public function uploadFileByClientId(Request $request)
         'status'          => 'nullable|string|max:255',
         'built_in_portal' => 'nullable|boolean',
         'templateId'      => 'nullable', // can be int or array
+        'siteName'        => 'nullable|string|max:255',
     ]);
 
     $client = Client::find($request->clientId);
@@ -210,23 +211,35 @@ public function uploadFileByClientId(Request $request)
     // If templateIds exist → create files for each template
     if (!empty($templateIds)) {
 
-        foreach ($templateIds as $templateId) {
-            $template = Template::find($templateId);
-            $templateContent = $template?->template;
+foreach ($templateIds as $templateId) {
+    $template = Template::find($templateId);
 
-            $builtInPortal = $request->boolean('built_in_portal', true);
+    if (!$template) {
+        continue;
+    }
 
-            $createdFiles[] = File::create([
-                'name'             => $template->name,
-                'path'             => $request->path,
-                'folderId'         => $folder->id,
-                'clientId'         => $request->clientId,
-                'status'           => $request->status,
-                'built_in_portal'  => $builtInPortal,
-                'template'         => $templateContent,
-                'templateId'       => $templateId,
-            ]);
-        }
+    $templateContent = $template->template;
+
+    // 👇 Inject Site Name below Date
+    $templateContent = $this->injectSiteNameIntoTemplate(
+        $templateContent,
+        $request->siteName
+    );
+
+    $builtInPortal = $request->boolean('built_in_portal', true);
+
+    $createdFiles[] = File::create([
+        'name'             => $template->name,
+        'path'             => $request->path,
+        'folderId'         => $folder->id,
+        'clientId'         => $request->clientId,
+        'status'           => $request->status,
+        'built_in_portal'  => $builtInPortal,
+        'template'         => $templateContent, // modified HTML
+        'templateId'       => $templateId,
+    ]);
+}
+
 
     } else {
         // No template → single file creation
@@ -308,5 +321,31 @@ public function uploadFileByClientId(Request $request)
 
         $folder->delete();
     }
+
+
+
+
+    private function injectSiteNameIntoTemplate(string $html, ?string $siteName): string
+{
+    if (!$siteName) {
+        return $html; // nothing to inject
+    }
+
+    $siteNameRow = '
+      <tr>
+        <td>Site Name</td>
+        <td colspan="3" contenteditable="true">' . e($siteName) . '</td>
+      </tr>
+    ';
+
+    // Find the Assessor/Date row and insert Site Name after it
+    $pattern = '/(<tr>\s*<td>Assessor<\/td>.*?<td contenteditable="true"><br><\/td>\s*<\/tr>)/is';
+
+    if (preg_match($pattern, $html)) {
+        return preg_replace($pattern, '$1' . $siteNameRow, $html, 1);
+    }
+
+    return $html; // fallback if structure changes
+}
 
 }
