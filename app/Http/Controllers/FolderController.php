@@ -325,27 +325,40 @@ foreach ($templateIds as $templateId) {
 
 
 
-    private function injectSiteNameIntoTemplate(string $html, ?string $siteName): string
+private function injectSiteNameIntoTemplate(string $html, ?string $siteName): string
 {
     if (!$siteName) {
-        return $html; // nothing to inject
+        return $html;
+    }
+
+    $siteName = e($siteName);
+
+    $existingPattern = '/<td>\s*Site Name\s*<\/td>\s*<td colspan="3" contenteditable="true">.*?<\/td>/is';
+
+    if (preg_match($existingPattern, $html)) {
+        return preg_replace(
+            $existingPattern,
+            '<td>Site Name</td><td colspan="3" contenteditable="true">' . $siteName . '</td>',
+            $html,
+            1
+        );
     }
 
     $siteNameRow = '
-      <tr>
-        <td>Site Name</td>
-        <td colspan="3" contenteditable="true">' . e($siteName) . '</td>
-      </tr>
-    ';
+<tr>
+  <td>Site Name</td>
+  <td colspan="3" contenteditable="true">' . $siteName . '</td>
+</tr>
+';
 
-    // Find the Assessor/Date row and insert Site Name after it
-    $pattern = '/(<tr>\s*<td>Assessor<\/td>.*?<td contenteditable="true"><br><\/td>\s*<\/tr>)/is';
+    $pattern = '/(<tr>\s*<td>Assessor<\/td>.*?<td contenteditable="true"><br\s*\/?>\s*<\/td>\s*<td>Date<\/td>.*?<\/tr>)/is';
 
     if (preg_match($pattern, $html)) {
         return preg_replace($pattern, '$1' . $siteNameRow, $html, 1);
     }
 
-    return $html; // fallback if structure changes
+    return $html; 
 }
+
 
 }
