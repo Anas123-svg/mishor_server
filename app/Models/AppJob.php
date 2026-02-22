@@ -21,6 +21,7 @@ class AppJob extends Model
         'status',
         'due_on',
         'clientId',
+        'site_address'
     ];
 
 

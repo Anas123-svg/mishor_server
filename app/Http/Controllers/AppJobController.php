@@ -44,6 +44,7 @@ public function updateTest(Request $request)
             'due_on'        => $request->due_on ?? null,
             'status'        => $request->status ?? 'pending',
             'clientId'      => $request->clientId ?? null,
+            'site_address'  => $request->site_address ?? null,
         ]);
     } else {
         /**
@@ -65,6 +66,7 @@ public function updateTest(Request $request)
                 'due_on'        => $request->due_on ?? null,
                 'status'        => $request->status ?? 'pending',
                 'clientId'      => $request->clientId ?? null,
+                'site_address'  => $request->site_address ?? null,
             ]);
         } else {
             $job->update([
@@ -76,6 +78,7 @@ public function updateTest(Request $request)
                 'due_on'        => $request->due_on ?? $job->due_on,
                 'status'        => $request->status ?? $job->status,
                 'clientId'      => $request->clientId ?? $job->clientId,
+                'site_address'  => $request->site_address ?? $job->site_address,
             ]);
         }
     }
@@ -136,6 +139,7 @@ public function appSync()
         return [
             'server_id' => $job->id, // maps server id to client server_id
             'client_name' => $job->client_name,
+            'site_address' => $job->site_address,
             'pipeline' => $job->pipeline ?? null, // if you have pipeline
             'event_title' => $job->job_title,
             'notes' => $job->notes,
@@ -191,6 +195,7 @@ public function store(Request $request)
         'notes' => 'nullable|string',
         'on_site_date' => 'nullable|date',
         'on_site_time' => 'nullable|string',
+        'site_address' => 'nullable|string|max:255',
         'status' => 'nullable|string|max:50',
         'due_on' => 'nullable|date',
         'clientId' => 'nullable|exists:clients,id',
@@ -226,7 +231,9 @@ if (!empty($validated['clientId']) && empty($validated['client_name'])) {
             'notes' => 'nullable|string',
             'on_site_date' => 'nullable|date',
             'on_site_time' => 'nullable|string',
+            'site_address' => 'nullable|string|max:255',
             'status' => 'nullable|string|max:50',
+
             'due_on' => 'nullable|date',
             'clientId' => 'nullable|exists:clients,id',
         ]);
